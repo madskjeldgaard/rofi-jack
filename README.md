@@ -5,9 +5,9 @@ A collection of scripts for controlling and manipulating the [JACK audio connect
 
 ## rofi-jack-connect
 
-A rofi script for making connections using the jack audio routing kit
+A script for making connections, either one at a time or multi channel.
 
-If no arguments are supplied, it will toggle between connect and disconnect.
+If no arguments are supplied, it will toggle between single channel connect and single channel disconnect as default behaviour.
 
 That is, if a connection is already made between the two nodes specified, it will break that connection and vice versa.
 
@@ -32,9 +32,12 @@ rofi-jack-connect --disconnect-all # Same as above but with all from device's ou
 
 rofi-jack-connect # Connect or disconnect depending on status
 ```
-
 # rofi-jack-device
-Start jack with the chosen audio device using the rofi menu launcher
+
+![jack device selection](/jack-device.gif)
+Start jack with the chosen audio device using the rofi menu launcher.
+
+If jack is already started, it will be restarted using your `~/.jackdrc` but filtered for the chosen device
 
 Example
 ```bash
