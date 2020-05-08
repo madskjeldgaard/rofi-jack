@@ -73,7 +73,8 @@ make_connection(){
 # Connect multiple sources
 make_multi_connection(){
 	counter=0
-	connections=$(jack_lsp| sed 's/_[0-9]//g'|sort -u)
+	# -r uses regex extended for optional char
+	connections=$(jack_lsp| sed -r 's/_?[0-9]//g'|sort -u)
 	get_connections
 
 	for connection_name in $(jack_lsp | grep "$unique_from"); 
