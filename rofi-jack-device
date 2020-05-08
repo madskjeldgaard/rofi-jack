@@ -1,12 +1,12 @@
 #!/bin/bash
 #
 ########################
-# rofi-jack
+# rofi-jack-device
 # by Mads Kjeldgaard
 #
 # Start jack with the chosen audio device using the rofi menu launcher
 #
-# Usage: rofi-jack
+# Usage: rofi-jack-device
 #
 ########################
 
