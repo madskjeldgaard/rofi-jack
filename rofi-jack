@@ -1,0 +1,61 @@
+#!/bin/bash
+#
+########################
+# rofi-jack
+# by Mads Kjeldgaard
+#
+# Start jack with the chosen audio device using the rofi menu launcher
+#
+# Usage: rofi-jack
+#
+########################
+
+rofi_command="rofi -theme gruvbox-dark -hide-scrollbar -i -dmenu -p 'jackdevice'" 
+
+# Once a device is chosen, this is the command that's executed
+execute_choice(){
+	echo "New jack command: $newjackcommand"
+
+	# Make sure jack isn't running
+	killall jackd 
+
+	# Execute new command
+	$newjackcommand 
+
+	# Bridge pulse to jack (again)
+	# This command assumes you have cadence installed
+	cadence-pulse2jack
+}
+
+# If there is a config file for jack, use it's contents for the jack command
+# Else a sensible default
+if [ -f "$HOME/.jackdrc" ]; then
+	echo "Found .jackdrc"
+	jack_command="$( cat $HOME/.jackdrc )"
+else
+	echo "could not find jackdrc"
+	jack_command="/usr/bin/jackd -dalsa -dhw:0 -r48000 -p1024 -n2"
+fi
+
+echo "Using command: $jack_command as basis"
+
+# Get all available audio interfaces
+cards=$(aplay -l|grep card)
+
+# Rofi command for choosing card
+chosencard="$( echo "$cards" | $rofi_command -dmenu -p "")"
+
+# If something was chosen, take action
+if [ ! -z "$chosencard" ]; then
+
+	# Filter out the card number and device number from the aplay entry
+	cardnum="$(echo $chosencard | grep -o -E 'card [0-9]+' | grep -o -E '[0-9]+')"
+	devnum="$(echo $chosencard | grep -o -E 'device [0-9]+'| grep -o -E '[0-9]+')"
+
+	# Construct a new jack command
+	newjackcommand="$(echo $jack_command | sed "s/dhw\:[0-9]/dhw:$cardnum,$devnum/g")"
+
+	execute_choice
+else
+	echo "Did not choose anything. Exiting."
+fi

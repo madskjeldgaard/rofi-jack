@@ -1,0 +1,169 @@
+#!/bin/bash
+#
+########################
+# rofi-jack-connect
+# by Mads Kjeldgaard
+#
+# Connect or disconnect jack sources using the rofi menu launcher
+#
+# Usage: 
+# rofi-jack-connect --help
+#
+#
+########################
+
+rofi_command="rofi -theme gruvbox-dark -hide-scrollbar -i -dmenu " 
+
+# Get connections
+connect_from=""
+connect_to=""
+
+get_unique_connections(){
+	# sed removes the trailing numbers
+	# sort removes unique
+	unique_connections="$(jack_lsp | sed 's/_[0-9]//g'|sort -u)"
+}
+
+
+# One argument: "multi"
+get_connections(){
+	get_unique_connections
+	connections=$(jack_lsp)
+
+	# Return early if the above failed
+	if [ "$?" == 1 ]; then return 1; fi
+
+	# if [[ "$1" == 'multi' ]]; then
+
+	# Get connection names
+	connect_from="$( echo "$connections" | $rofi_command -dmenu -p 'jack_from')"
+	
+	# Unique is without trailing numbers (for multiple connections)
+	unique_from="$(echo $connect_from | sed 's/_[0-9]//g')"
+
+	# If no connection chosen or jack not booted, return 1
+	if [ -z $connect_from ]; then return 1; fi
+
+	connect_to="$( echo "$connections" | $rofi_command -dmenu -p 'jack_to')"
+	unique_to="$(echo $connect_to | sed 's/_[0-9]//g')"
+}
+
+
+make_connection(){
+
+	# Exit if nothing is chosen
+	if [[ $? -ne 0 ]]; then 
+		echo "Error: Could not retrieve connection points."  
+		exit; 
+	fi
+
+	if [[ "$1" == "connect" ]];
+	then 
+		echo "Connecting: $connect_from <-> $connect_to"
+		jack_connect $connect_from $connect_to
+	elif [[ "$1" == "disconnect" ]];
+	then
+		echo "Disconnect: $connect_from <-/-> $connect_to"
+		jack_disconnect $connect_from $connect_to
+	else
+		exit
+	fi
+}
+
+# Connect multiple sources
+make_multi_connection(){
+	counter=0
+	for connection_name in $(jack_lsp | grep "$unique_from"); 
+		do 
+			let counter+=1; 
+			delim="_"
+			connect_from="$connection_name"
+			connect_to="$unique_to$delim$counter"
+			# echo "$connect_from to $connect_to"
+			make_connection "$1"
+		done
+}
+
+
+echo_options(){
+	echo "
+	A rofi script for making connections using the jack audio routing kit
+
+	If no arguments are supplied, it will toggle between connect and disconnect.
+
+	That is, if a connection is already made between the two nodes specified, it will break that connection and vice versa.
+
+	Optional arguments:
+
+	For single channels
+	--connect or -c
+	--disconnect or -d
+
+	For all channels in from device
+	--connect-all or -ca
+
+	For all channels in from device
+	--disconnect-all or -da
+
+	Example
+
+	rofi-jack-connect --connect # Specifically connect the two chosen connection points
+	rofi-jack-connect --connect-all # Same as above but with all from device's outputs
+	rofi-jack-connect --disconnect # Specifically disconnect the two chosen connection points
+	rofi-jack-connect --disconnect-all # Same as above but with all from device's outputs
+
+	rofi-jack-connect # Connect or disconnect depending on status
+	"
+}
+
+# Using parameters
+case $1 in
+	# If no arguments are supplied
+	"-h")
+		echo_options
+		;;
+	"--help")
+		echo_options
+		;;
+	"")
+
+		get_connections
+		make_connection "connect"
+		if [[ "$?" == "1" ]]; then 
+			echo "Client already connected. Disconnecting instead"
+			jack_disconnect $connect_from $connect_to;
+		fi
+		;;
+	"--connect")
+		get_connections
+		make_connection "connect"
+		;;
+	"-c")
+		get_connections
+		make_connection "connect"
+		;;
+	"--connect-all")
+		get_connections
+		make_multi_connection "connect"
+		;;
+	"-ca")
+		get_connections
+		make_multi_connection "connect"
+		;;
+	"--disconnect-all")
+		get_connections
+		make_multi_connection "disconnect"
+		;;
+	"-da")
+		get_connections
+		make_multi_connection "disconnect"
+		;;
+	"--disconnect")
+		get_connections
+		make_connection "disconnect"
+		;;
+	"-d")
+		get_connections
+		make_connection "disconnect"
+		;;
+esac
