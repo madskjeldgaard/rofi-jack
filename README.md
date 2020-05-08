@@ -37,7 +37,7 @@ rofi-jack-connect # Connect or disconnect depending on status
 ![jack device selection](/jack-device.gif)
 Start jack with the chosen audio device using the rofi menu launcher.
 
-If jack is already started, it will be restarted using your `~/.jackdrc` but filtered for the chosen device
+If jack is already started, it will be killed (both `jackd` and `jackdbus` will be killed) and then restarted using your `~/.jackdrc` but filtered for the chosen device
 
 Example
 ```bash
