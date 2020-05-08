@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 # Execute jack device chooser
-rofi-jack-device
+$HOME/.scripts/rofi-jack-device
 
 # Wait a bit
 sleep 2
