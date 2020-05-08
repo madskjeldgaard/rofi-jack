@@ -18,13 +18,17 @@ execute_choice(){
 
 	# Make sure jack isn't running
 	killall jackd 
+	killall jackdbus
+
+	sleep 1;
 
 	# Execute new command
 	$newjackcommand 
 
 	# Bridge pulse to jack (again)
 	# This command assumes you have cadence installed
-	cadence-pulse2jack
+	# sleep 1;
+	# cadence-pulse2jack
 }
 
 # If there is a config file for jack, use it's contents for the jack command
