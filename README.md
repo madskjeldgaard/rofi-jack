@@ -48,6 +48,8 @@ rofi-jack-device
 ## changejackdevice
 This runs `rofi-jack-device` in conjunction with some functions that kills pulse audio, restarts it and restarts the cadence pulseaudio 2 jack bridge. This is only necessary if you are using pulse and it calls a function from the [cadence](https://kx.studio) so it got it's own separate script because it's only relevant to people using those. 
 
+This script expects `rofi-jack-device` to be in `$HOME/.scripts`
+
 Example
 ```bash
 changejackdevice
