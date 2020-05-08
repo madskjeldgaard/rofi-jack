@@ -33,7 +33,7 @@ rofi-jack-connect --disconnect-all # Same as above but with all from device's ou
 
 rofi-jack-connect # Connect or disconnect depending on status
 ```
-# rofi-jack-device
+## rofi-jack-device
 
 ![jack device selection](/jack-device.gif)
 Start jack with the chosen audio device using the rofi menu launcher.
