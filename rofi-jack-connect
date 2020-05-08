@@ -18,6 +18,8 @@ rofi_command="rofi -theme gruvbox-dark -hide-scrollbar -i -dmenu "
 connect_from=""
 connect_to=""
 
+connections=$(jack_lsp)
+
 get_unique_connections(){
 	# sed removes the trailing numbers
 	# sort removes unique
@@ -28,7 +30,6 @@ get_unique_connections(){
 # One argument: "multi"
 get_connections(){
 	get_unique_connections
-	connections=$(jack_lsp)
 
 	# Return early if the above failed
 	if [ "$?" == 1 ]; then return 1; fi
@@ -47,7 +48,6 @@ get_connections(){
 	connect_to="$( echo "$connections" | $rofi_command -dmenu -p 'jack_to')"
 	unique_to="$(echo $connect_to | sed 's/_[0-9]//g')"
 }
-
 
 make_connection(){
 
@@ -73,6 +73,9 @@ make_connection(){
 # Connect multiple sources
 make_multi_connection(){
 	counter=0
+	connections=$(jack_lsp| sed 's/_[0-9]//g'|sort -u)
+	get_connections
+
 	for connection_name in $(jack_lsp | grep "$unique_from"); 
 		do 
 			let counter+=1; 
@@ -143,19 +146,15 @@ case $1 in
 		make_connection "connect"
 		;;
 	"--connect-all")
-		get_connections
 		make_multi_connection "connect"
 		;;
 	"-ca")
-		get_connections
 		make_multi_connection "connect"
 		;;
 	"--disconnect-all")
-		get_connections
 		make_multi_connection "disconnect"
 		;;
 	"-da")
-		get_connections
 		make_multi_connection "disconnect"
 		;;
 	"--disconnect")
