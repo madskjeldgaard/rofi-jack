@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+
+# Execute jack device chooser
+$HOME/.scripts/rofi-jack-device
+
+# Wait a bit
+sleep 2
+
+# Kill all pulse audio
+killall pulseaudio
+
+# Restart
+pulseaudio --start
+
+# Bridge pulse to jack
+cadence-pulse2jack
