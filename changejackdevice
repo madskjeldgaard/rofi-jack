@@ -11,30 +11,43 @@
 # with pulse bridged to jack
 ##########################################
 
+# Kill jack before launching the rofi jack device launcher
+# This is a more reliable way to detect whether jack has been killed yet
+# And gives us a PID to be used to wait
+killall jackd &
+KILLID=$!
+wait $KILLID
+
 # Execute jack device chooser
 # Change this if you placed the rofi jack device script somewhere else
 $HOME/.scripts/rofi-jack-device
 
-if [ ! -z $(pgrep jackd) ]; then
-	# Kill all pulse audio
-	if [ ! -z $(pgrep pulseaudio) ]; then
-		echo "Pulse audio is running."
+# Kill all pulse audio
+if [ ! -z $(pgrep pulseaudio) ]; then
+	echo "Pulse audio is running."
+	pulseaudio --kill &
+	PULSEKILL=$!
 
-		killall pulseaudio 
+	# Wait for pulse to die
+	wait $PULSEKILL
+	echo "Pulseaudio has been killed."
 
-		while [ ! -z $(pgrep pulseaudio) ];
-		do
-			echo "Waiting for pulseaudio to die..."
-			sleep 1
-		done
+	counter=0
+	while [ -z $(pgrep jackd) ] && [ $counter -lt 30 ];
+	do
+		echo "Waiting for jack to come alive $counter ..."
+		sleep 1
+		counter=$((counter+1))
+	done 
 
-		echo "Pulseaudio has been killed."
+	# pulseaudio --start && sleep 1 && cadence-pulse2jack
+	echo "Restarting pulseaudio and bridging to jack"
+	pulseaudio --start &
+	PULSEID=$!
 
-		# Restart pulseaudio and bridge to jack
-		echo "Restarting pulseaudio and bridging to jack"
-		pulseaudio --start && cadence-pulse2jack
-		exit 0
-	fi
-else
-	exit 1
+	# Wait for pulse to start
+	wait $PULSEID
+	cadence-pulse2jack
+
+	exit 0
 fi

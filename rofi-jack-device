@@ -14,21 +14,21 @@ rofi_command="rofi -theme gruvbox-dark -hide-scrollbar -i -dmenu -p 'jackdevice'
 
 # Once a device is chosen, this is the command that's executed
 execute_choice(){
-	echo "New jack command: $newjackcommand"
-
 	# Make sure jack isn't running
-	killall jackd 
-	killall jackdbus
+	if [ ! -z $(pgrep jackd) ]; then
+		killall jackd & 
+		THISPID=$!
+		wait $THISPID
+	fi
 
-	sleep 1;
+	if [ ! -z $(pgrep jackdbus) ]; then
+		killall jackdbus &
+		THISPID=$!
+		wait $THISPID
+	fi
 
-	# Execute new command
-	$newjackcommand 
-
-	# Bridge pulse to jack (again)
-	# This command assumes you have cadence installed
-	# sleep 1;
-	# cadence-pulse2jack
+	# Execute new command 
+	$newjackcommand
 }
 
 # If there is a config file for jack, use it's contents for the jack command
@@ -60,6 +60,9 @@ if [ ! -z "$chosencard" ]; then
 	newjackcommand="$(echo $jack_command | sed "s/dhw\:[0-9]/dhw:$cardnum,$devnum/g")"
 
 	execute_choice
+
+	exit 0
 else
 	echo "Did not choose anything. Exiting."
+	exit 1
 fi
