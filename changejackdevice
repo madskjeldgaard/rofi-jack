@@ -1,16 +1,26 @@
 #!/usr/bin/env sh
 
-# Execute jack device chooser
-$HOME/.scripts/rofi-jack-device
+##########################################
+#
+# changejackdevice
+#
+# By Mads Kjeldgaard
+#
+# A convenience script to accompany my rofi jack scripts
+# 
+# This changes the jack audio device and then kills and restarts pulseaudio
+# with pulse bridged to jack
+##########################################
 
-# Wait a bit
-sleep 2
+# Execute jack device chooser
+# Change this if you placed the rofi jack device script somewhere else
+$HOME/.scripts/rofi-jack-device
 
 # Kill all pulse audio
 killall pulseaudio
 
-# Restart
-pulseaudio --start
+# Wait a bit to let pulse audio die
+sleep 1
 
-# Bridge pulse to jack
-cadence-pulse2jack
+# Restart pulseaudio and bridge to jack
+pulseaudio --start && cadence-pulse2jack
