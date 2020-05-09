@@ -1,5 +1,4 @@
 #!/usr/bin/env sh
-
 ##########################################
 #
 # changejackdevice
@@ -17,10 +16,17 @@
 $HOME/.scripts/rofi-jack-device
 
 # Kill all pulse audio
-killall pulseaudio
+if [ ! -z $(pgrep pulseaudio) ]; then
+	killall pulseaudio && echo "Pulseaudio was running. Killing it."
 
-# Wait a bit to let pulse audio die
-sleep 1
+	while [ ! -z $(pgrep pulseaudio) ];
+	do
+		echo "Waiting for pulseaudio to die"
+		sleep 1
+	done
+
+fi
 
 # Restart pulseaudio and bridge to jack
+echo "Restarting pulseaudio and bridging to jack"
 pulseaudio --start && cadence-pulse2jack
