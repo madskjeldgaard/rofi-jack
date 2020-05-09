@@ -13,7 +13,7 @@
 
 # Execute jack device chooser
 # Change this if you placed the rofi jack device script somewhere else
-# $HOME/.scripts/rofi-jack-device
+$HOME/.scripts/rofi-jack-device
 
 # Kill all pulse audio
 if [ ! -z $(pgrep pulseaudio) ]; then
