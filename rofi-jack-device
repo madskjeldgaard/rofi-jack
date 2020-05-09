@@ -60,6 +60,8 @@ if [ ! -z "$chosencard" ]; then
 	newjackcommand="$(echo $jack_command | sed "s/dhw\:[0-9]/dhw:$cardnum,$devnum/g")"
 
 	execute_choice
+	exit 0
 else
 	echo "Did not choose anything. Exiting."
+	exit 1
 fi
