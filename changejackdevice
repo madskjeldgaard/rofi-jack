@@ -15,11 +15,11 @@
 # Change this if you placed the rofi jack device script somewhere else
 $HOME/.scripts/rofi-jack-device
 
-# run only if rofi jack device was a success
-if [ $? = 0 ]; then
-
+if [ ! -z $(pgrep jackd) ]; then
 	# Kill all pulse audio
 	if [ ! -z $(pgrep pulseaudio) ]; then
+		echo "Pulse audio is running."
+
 		killall pulseaudio 
 
 		while [ ! -z $(pgrep pulseaudio) ];
@@ -29,13 +29,12 @@ if [ $? = 0 ]; then
 		done
 
 		echo "Pulseaudio has been killed."
-	fi
 
-	# Restart pulseaudio and bridge to jack
-	echo "Restarting pulseaudio and bridging to jack"
-	pulseaudio --start && cadence-pulse2jack
-	exit 0
+		# Restart pulseaudio and bridge to jack
+		echo "Restarting pulseaudio and bridging to jack"
+		pulseaudio --start && cadence-pulse2jack
+		exit 0
+	fi
 else
 	exit 1
 fi
-
