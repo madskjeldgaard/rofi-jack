@@ -4,7 +4,20 @@
 
 A collection of scripts for controlling and manipulating the [JACK audio connection kit](https://jackaudio.org/) using the [rofi](https://github.com/davatorium/rofi) application launcher.
 
-## rofi-jack-connect
+# Scripts
+### changejackdevice
+This is the main script for changing audio device. It is a convenience script for changing jack device and restarting pulseaudio and rebridging pulseaudio to jack.
+
+It runs `rofi-jack-device` with some additional commands to do the pulseaudio stuff which of course is only worth anything if you actually use pulseaudio and the [cadence](https://kx.studio) `cadence-pulse2jack` script. 
+
+The script expects `rofi-jack-device` to be in `$HOME/.scripts`
+
+Example
+```bash
+changejackdevice
+```
+
+### rofi-jack-connect
 
 A script for making connections, either one at a time or multi channel.
 
@@ -33,7 +46,8 @@ rofi-jack-connect --disconnect-all # Same as above but with all from device's ou
 
 rofi-jack-connect # Connect or disconnect depending on status
 ```
-## rofi-jack-device
+
+### rofi-jack-device
 
 ![jack device selection](/jack-device.gif)
 Start jack with the chosen audio device using the rofi menu launcher.
@@ -43,14 +57,4 @@ If jack is already started, it will be killed (both `jackd` and `jackdbus` will 
 Example
 ```bash
 rofi-jack-device
-```
-
-## changejackdevice
-This runs `rofi-jack-device` in conjunction with some functions that kills pulse audio, restarts it and restarts the cadence pulseaudio 2 jack bridge. This is only necessary if you are using pulse and it calls a function from the [cadence](https://kx.studio) so it got it's own separate script because it's only relevant to people using those. 
-
-This script expects `rofi-jack-device` to be in `$HOME/.scripts`
-
-Example
-```bash
-changejackdevice
 ```
