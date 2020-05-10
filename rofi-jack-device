@@ -10,65 +10,139 @@
 #
 ########################
 
-rofi_command="rofi -theme gruvbox-dark -hide-scrollbar -i -dmenu -p 'jackdevice'" 
+rofi_command="rofi -theme gruvbox-dark -hide-scrollbar -i -dmenu " 
 
-kill_old_processes(){
-	# Make sure jack isn't running
-	if [ ! -z $(pgrep jackd) ]; then
-		killall jackd & 
-		THISPID=$!
-		wait $THISPID
-	fi
+# Jack device defaults
+rate=44100
+blocksize=1024
+nperiods=2
+inchannels=0
+outchannels=2
 
-	if [ ! -z $(pgrep jackdbus) ]; then
-		killall jackdbus &
-		THISPID=$!
-		wait $THISPID
-	fi
+# Alsa device
+cardnum=0
+devnum=0
+
+# kill_old_processes(){ }
+
+settings(){
+# samplerate
+samplerates="44100 
+48000 
+96000 
+192000"
+
+rate="$( echo "$samplerates" | $rofi_command -dmenu -p 'samplerate')"
+
+echo "Samplerate chosen: $rate"
+
+# Blocksize
+blocksize="$( for i in {4..12}; do echo $((2**$i)); done | $rofi_command -dmenu -p 'blocksize')"
+echo "blocksize chosen: $blocksize"
+
+# Duplex
+duplexvals="true
+false
+"
+duplex="$( echo "$duplexvals" | $rofi_command -dmenu -p 'duplex' )"
+echo "duplex chosen: $duplex"
+
+# in channels
+inchannels="$( echo "$(seq 0 64)" | $rofi_command -dmenu -p 'inchannels')"
+echo "inchannels chosen: $inchannels"
+
+outchannels="$( echo "$(seq 0 64)" | $rofi_command -dmenu -p 'outchannels')"
+echo "outchannel chosen: $outchannels"
+
+nperiods="$( echo "$(seq 1 8)" | $rofi_command -dmenu -p 'nperiod')"
+echo "nperiod chosen: $nperiods"
 }
 
-make_jack_command(){
-	# If there is a config file for jack, use it's contents for the jack command
-	# Else a sensible default
-	if [ -f "$HOME/.jackdrc" ]; then
-		echo "Found .jackdrc"
-		jack_command="$( cat $HOME/.jackdrc )"
-	else
-		echo "could not find jackdrc"
-		jack_command="/usr/bin/jackd -dalsa -dhw:0 -r48000 -p1024 -n2"
-	fi
-
-	echo "Using command: $jack_command as basis"
+make_jack_command(){ 
+	launch_jack="$(which jackd) -dalsa -dhw:$cardnum,$devnum -r$rate -p$blocksize -n$nperiods -i$inchannels -o$outchannels"
 }
 
 choose_card(){
-	# Get all available audio interfaces
-	cards=$(aplay -l|grep card)
+# Get all available audio interfaces
+cards=$(aplay -l|grep card)
 
-	# Rofi command for choosing card
-	chosencard="$( echo "$cards" | $rofi_command -dmenu -p "")"
+# Rofi command for choosing card
+device="$( echo "$cards" | $rofi_command -dmenu -p "device")"
 
-	# Filter out the card number and device number from the aplay entry
-	cardnum="$(echo $chosencard | grep -o -E 'card [0-9]+' | grep -o -E '[0-9]+')"
-	devnum="$(echo $chosencard | grep -o -E 'device [0-9]+'| grep -o -E '[0-9]+')"
+# Filter out the card number and device number from the aplay entry
+cardnum="$(echo $device | grep -o -E 'card [0-9]+' | grep -o -E '[0-9]+')"
+devnum="$(echo $device | grep -o -E 'device [0-9]+'| grep -o -E '[0-9]+')"
 }
 
+
+init(){
+# Launch card chooser
+choose_card
+
 # If something was chosen, take action
-if [ ! -z "$chosencard" ]; then
+if [[ ! -z "$device" ]]; then
 
-	# Choose audio card
-	choose_card
-
-	# Construct a new jack command
 	make_jack_command
-	newjackcommand="$(echo $jack_command | sed "s/dhw\:[0-9]/dhw:$cardnum,$devnum/g")"
 
-	kill_old_processes
+	# Make sure jack isn't running
+	if [[ ! -z $(pgrep jackd) ]]; then
+		echo "Old instance of jack running. Killing it."
+		killall jackd &
+		JACKKILL=$!
+	fi
 
-	$newjackcommand
+	if [[ ! -z $(pgrep jackdbus) ]]; then
+		echo "Old instance of jackdbus running. Killing it."
+		killall jackdbus &
+		JACKBUSKILL=$!
+	fi
+
+	wait $JACKKILL && echo "Killed jackd (PID $JACKKILL)"
+	wait $JACKBUSKILL && echo "Killed jackdbus (PID $JACKBUSKILL)"
+
+	sleep 1; # Is this necessary?
+	echo "Launching jack using command $launch_jack"
+
+	$launch_jack
 
 	exit 0
 else
 	echo "Did not choose anything. Exiting."
 	exit 1
 fi
+}
+
+echo_options(){
+echo "
+A rofi script for setting up and launching jack
+
+If no arguments are supplied it will launch rofi with the choices of audio devices and then launch jack with the selected device and sensible defaults.
+
+Optional arguments:
+
+--setup or -s
+This launches the script in a special mode which will take you through a range of useful audio settings and then launch jack
+"
+}
+
+# Using parameters
+case $1 in
+	# If no arguments are supplied
+	"-h")
+		echo_options
+		;;
+	"--help")
+		echo_options
+		;;
+	"")
+		init
+		;;
+	"-s")
+		settings
+		init
+		;;
+	"--setup")
+		settings
+		init
+		;;
+esac
