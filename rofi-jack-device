@@ -23,7 +23,27 @@ outchannels=2
 cardnum=0
 devnum=0
 
-# kill_old_processes(){ }
+kill_old_processes(){ 
+
+# Make sure jack isn't running
+if [[ ! -z $(pgrep jackd) ]]; then
+	echo "Old instance of jack running. Killing it."
+	killall jackd &
+	JPID=$(pgrep jackd)
+	while kill -0 $JPID; do 
+		sleep 1
+	done
+fi
+
+if [[ ! -z $(pgrep jackdbus) ]]; then
+	echo "Old instance of jackdbus running. Killing it."
+	killall jackdbus &
+	JPID=$(pgrep jackdbus)
+	while kill -0 $JPID; do 
+		sleep 1
+	done	
+fi
+}
 
 settings(){
 # samplerate
@@ -83,26 +103,9 @@ choose_card
 if [[ ! -z "$device" ]]; then
 
 	make_jack_command
+	kill_old_processes
 
-	# Make sure jack isn't running
-	if [[ ! -z $(pgrep jackd) ]]; then
-		echo "Old instance of jack running. Killing it."
-		killall jackd &
-		JACKKILL=$!
-	fi
-
-	if [[ ! -z $(pgrep jackdbus) ]]; then
-		echo "Old instance of jackdbus running. Killing it."
-		killall jackdbus &
-		JACKBUSKILL=$!
-	fi
-
-	wait $JACKKILL && echo "Killed jackd (PID $JACKKILL)"
-	wait $JACKBUSKILL && echo "Killed jackdbus (PID $JACKBUSKILL)"
-
-	sleep 1; # Is this necessary?
 	echo "Launching jack using command $launch_jack"
-
 	$launch_jack
 
 	exit 0
