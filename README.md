@@ -15,21 +15,34 @@ A rofi script for setting up and launching jack
 Examples:
 
 Display help:
-`rofi-jack-device -h`
+
+```bash
+rofi-jack-device -h`
+```
 
 Launch jack. If there is a ~/.jackdrc file it will filter it with the chosen hardware device and use the rest of the settings from before.
-`rofi-jack-device`
+
+```bash
+rofi-jack-device`
+```
 
 Launch the script in a special mode which will take you through a range of useful audio settings.
 These are then saved for future use in ~/.jackdrc and then jack is launched
-`rofi-jack-device -s`
+
+```bash
+rofi-jack-device -s`
+```
 
 After having (re)started jack, kill pulseaudio and restart it with the pulse2jack bridge. For now, this is dependent on having cadence installed (because it uses the `cadence-pulse2jack` script)
-`rofi-jack-device -p`
 
+```bash
+rofi-jack-device -p`
+```
 Set all settings, save them and restart pulseaudio with bridge:
-`rofi-jack-device -s -p`
 
+```bash
+rofi-jack-device -s -p`
+```
 ### rofi-jack-connect
 
 A script for making connections, either one at a time or multi channel.
