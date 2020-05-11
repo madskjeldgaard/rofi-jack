@@ -1,5 +1,5 @@
 #!/bin/bash
-#
+
 ########################
 # rofi-jack-device
 # by Mads Kjeldgaard
@@ -10,7 +10,6 @@
 #
 ########################
 
-rofi_command="rofi -theme gruvbox-dark -hide-scrollbar -i -dmenu " 
 
 # Jack device defaults
 rate=44100
@@ -23,29 +22,44 @@ outchannels=2
 cardnum=0
 devnum=0
 
+# Options
+RESTARTPULSE=false
+SAVEJACKDRC=false
+NEWSETTINGS=false
+ROFITHEME="gruvbox-dark"
+
+rofi_command="rofi -theme $ROFITHEME -hide-scrollbar -i -dmenu " 
+
 kill_old_processes(){ 
 
 # Make sure jack isn't running
-if [[ ! -z $(pgrep jackd) ]]; then
+if [[ -n $(pgrep jackd) ]]; then
 	echo "Old instance of jack running. Killing it."
 	killall jackd &
 	JPID=$(pgrep jackd)
+
+	# This technique borrowed from here: 
+	# https://stackoverflow.com/questions/17894720/kill-a-process-and-wait-for-the-process-to-exit
 	while kill -0 $JPID; do 
 		sleep 1
 	done
 fi
 
-if [[ ! -z $(pgrep jackdbus) ]]; then
+if [[ -n $(pgrep jackdbus) ]]; then
 	echo "Old instance of jackdbus running. Killing it."
 	killall jackdbus &
+
 	JPID=$(pgrep jackdbus)
 	while kill -0 $JPID; do 
 		sleep 1
 	done	
 fi
+
 }
 
-settings(){
+# Generate settings for the jackd command
+# These are saved as variables and used at the end of the script
+generate_settings(){
 # samplerate
 samplerates="44100 
 48000 
@@ -61,11 +75,11 @@ blocksize="$( for i in {4..12}; do echo $((2**$i)); done | $rofi_command -dmenu 
 echo "blocksize chosen: $blocksize"
 
 # Duplex
-duplexvals="true
-false
-"
-duplex="$( echo "$duplexvals" | $rofi_command -dmenu -p 'duplex' )"
-echo "duplex chosen: $duplex"
+# duplexvals="true
+# false
+# "
+# duplex="$( echo "$duplexvals" | $rofi_command -dmenu -p 'duplex' )"
+# echo "duplex chosen: $duplex"
 
 # in channels
 inchannels="$( echo "$(seq 0 64)" | $rofi_command -dmenu -p 'inchannels')"
@@ -79,7 +93,15 @@ echo "nperiod chosen: $nperiods"
 }
 
 make_jack_command(){ 
-	launch_jack="$(which jackd) -dalsa -dhw:$cardnum,$devnum -r$rate -p$blocksize -n$nperiods -i$inchannels -o$outchannels"
+	if [[ -f $HOME/.jackdrc ]] && ! $NEWSETTINGS; then
+		launch_jack=$(cat "$HOME/.jackdrc")
+		echo "Found .jackdrc: $launch_jack"
+
+		# Filter command and change device only
+		launch_jack=$(echo $launch_jack | sed "s/-dhw:[0-9+]\?,\?[0-9+]/-dhw:$cardnum,$devnum/")
+	else
+		launch_jack="$(which jackd) -dalsa -dhw:$cardnum,$devnum -r$rate -p$blocksize -n$nperiods -i$inchannels -o$outchannels"
+	fi
 }
 
 choose_card(){
@@ -94,6 +116,42 @@ cardnum="$(echo $device | grep -o -E 'card [0-9]+' | grep -o -E '[0-9]+')"
 devnum="$(echo $device | grep -o -E 'device [0-9]+'| grep -o -E '[0-9]+')"
 }
 
+save_command_as_jackdrc(){
+	echo "Saving command $launch_jack to .jackdrc"
+	echo "$launch_jack" > $HOME/.jackdrc
+}
+
+restart_and_bridge_pulse(){
+
+# Kill all pulse audio
+if [ -n $(pgrep pulseaudio) ]; then
+	echo "Pulse audio is running. Killing old pulse audio process... "
+
+	killall pulseaudio &
+	PULSEKILL=$!
+
+	wait $PULSEKILL
+
+	while (kill -0 $PULSEKILL > /dev/null); do 
+		echo "Waiting for Pulse to be killed..."
+		sleep 1
+	done	
+
+	echo "Pulseaudio has been killed."
+fi
+
+counter=0
+while [ -z $(pgrep jackd) ] && [ $counter -lt 30 ];
+do
+	echo "Waiting for jack to come alive $counter ..."
+	sleep 1
+	counter=$((counter+1))
+done 
+
+echo "Restarting pulseaudio and bridging to jack"
+cadence-pulse2jack
+
+}
 
 init(){
 # Launch card chooser
@@ -102,11 +160,26 @@ choose_card
 # If something was chosen, take action
 if [[ ! -z "$device" ]]; then
 
+	# Create a jack command to be used
 	make_jack_command
+
+	# Save the constructed command to ~/.jackdrc to be reused later
+	echo "JACKDRC VAR: $SAVEJACKDRC"
+	if $SAVEJACKDRC; then
+		save_command_as_jackdrc
+	fi
+
+	# Make sure old instances of jackd and jackdbus are not running
 	kill_old_processes
 
+	# Launch jack
 	echo "Launching jack using command $launch_jack"
-	$launch_jack
+	$launch_jack &
+
+	# Restart Pulse and bridge it to jack
+	if $RESTARTPULSE; then
+		restart_and_bridge_pulse
+	fi
 
 	exit 0
 else
@@ -128,24 +201,27 @@ This launches the script in a special mode which will take you through a range o
 "
 }
 
-# Using parameters
-case $1 in
-	# If no arguments are supplied
-	"-h")
-		echo_options
-		;;
-	"--help")
-		echo_options
-		;;
-	"")
-		init
-		;;
-	"-s")
-		settings
-		init
-		;;
-	"--setup")
-		settings
-		init
-		;;
-esac
+while getopts "hsp" opt; do
+	case $opt in
+		h)
+			echo_options
+			exit 0
+			;;
+		s) 
+			generate_settings
+			SAVEJACKDRC=true
+			NEWSETTINGS=true
+			;;
+		p) 
+			RESTARTPULSE=true
+			;;
+		\?)
+			echo "invalid option: -$OPTARG" 
+			echo_options
+			exit 1
+			;;
+	esac
+
+done
+
+init
