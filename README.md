@@ -17,31 +17,31 @@ Examples:
 Display help:
 
 ```bash
-rofi-jack-device -h`
+rofi-jack-device -h
 ```
 
 Launch jack. If there is a ~/.jackdrc file it will filter it with the chosen hardware device and use the rest of the settings from before.
 
 ```bash
-rofi-jack-device`
+rofi-jack-device
 ```
 
 Launch the script in a special mode which will take you through a range of useful audio settings.
 These are then saved for future use in ~/.jackdrc and then jack is launched
 
 ```bash
-rofi-jack-device -s`
+rofi-jack-device -s
 ```
 
 After having (re)started jack, kill pulseaudio and restart it with the pulse2jack bridge. For now, this is dependent on having cadence installed (because it uses the `cadence-pulse2jack` script)
 
 ```bash
-rofi-jack-device -p`
+rofi-jack-device -p
 ```
 Set all settings, save them and restart pulseaudio with bridge:
 
 ```bash
-rofi-jack-device -s -p`
+rofi-jack-device -s -p
 ```
 ### rofi-jack-connect
 
