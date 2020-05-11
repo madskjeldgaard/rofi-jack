@@ -164,7 +164,6 @@ if [[ ! -z "$device" ]]; then
 	make_jack_command
 
 	# Save the constructed command to ~/.jackdrc to be reused later
-	echo "JACKDRC VAR: $SAVEJACKDRC"
 	if $SAVEJACKDRC; then
 		save_command_as_jackdrc
 	fi
