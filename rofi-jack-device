@@ -192,12 +192,17 @@ echo_options(){
 echo "
 A rofi script for setting up and launching jack
 
-If no arguments are supplied it will launch rofi with the choices of audio devices and then launch jack with the selected device and sensible defaults.
+FLAGS:
+-h
+Display this help
 
-Optional arguments:
+-s
+This launches the script in a special mode which will take you through a range of useful audio settings.
+These are then saved for future use in ~/.jackdrc and then jack is launched
 
---setup or -s
-This launches the script in a special mode which will take you through a range of useful audio settings and then launch jack
+-p
+After having (re)started jack, kill pulseaudio and restart it with the pulse2jack bridge
+
 "
 }
 

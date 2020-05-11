@@ -5,17 +5,30 @@
 A collection of scripts for controlling and manipulating the [JACK audio connection kit](https://jackaudio.org/) using the [rofi](https://github.com/davatorium/rofi) application launcher.
 
 # Scripts
-### changejackdevice
-This is the main script for changing audio device. It is a convenience script for changing jack device and restarting pulseaudio and rebridging pulseaudio to jack.
 
-It runs `rofi-jack-device` with some additional commands to do the pulseaudio stuff which of course is only worth anything if you actually use pulseaudio and the [cadence](https://kx.studio) `cadence-pulse2jack` script. 
+### rofi-jack-device
 
-The script expects `rofi-jack-device` to be in `$HOME/.scripts`
+![jack device selection](/jack-device.gif)
 
-Example
-```bash
-changejackdevice
-```
+A rofi script for setting up and launching jack
+
+Examples:
+
+Display help:
+`rofi-jack-device -h`
+
+Launch jack. If there is a ~/.jackdrc file it will filter it with the chosen hardware device and use the rest of the settings from before.
+`rofi-jack-device`
+
+Launch the script in a special mode which will take you through a range of useful audio settings.
+These are then saved for future use in ~/.jackdrc and then jack is launched
+`rofi-jack-device -s`
+
+After having (re)started jack, kill pulseaudio and restart it with the pulse2jack bridge. For now, this is dependent on having cadence installed (because it uses the `cadence-pulse2jack` script)
+`rofi-jack-device -p`
+
+Set all settings, save them and restart pulseaudio with bridge:
+`rofi-jack-device -s -p`
 
 ### rofi-jack-connect
 
@@ -47,14 +60,3 @@ rofi-jack-connect --disconnect-all # Same as above but with all from device's ou
 rofi-jack-connect # Connect or disconnect depending on status
 ```
 
-### rofi-jack-device
-
-![jack device selection](/jack-device.gif)
-Start jack with the chosen audio device using the rofi menu launcher.
-
-If jack is already started, it will be killed (both `jackd` and `jackdbus` will be killed) and then restarted using your `~/.jackdrc` but filtered for the chosen device
-
-Example
-```bash
-rofi-jack-device
-```
