@@ -174,7 +174,7 @@ if [[ ! -z "$device" ]]; then
 
 	# Launch jack
 	echo "Launching jack using command $launch_jack"
-	$launch_jack &
+	$launch_jack
 
 	# Restart Pulse and bridge it to jack
 	if $RESTARTPULSE; then
