@@ -127,7 +127,8 @@ restart_and_bridge_pulse(){
 if [ -n $(pgrep pulseaudio) ]; then
 	echo "Pulse audio is running. Killing old pulse audio process... "
 
-	killall pulseaudio &
+	# killall pulseaudio &
+	pulseaudio --kill
 	PULSEKILL=$!
 
 	wait $PULSEKILL
