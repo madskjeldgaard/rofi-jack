@@ -95,7 +95,7 @@ echo "nperiod chosen: $nperiods"
 make_jack_command(){ 
 	if [[ -f $HOME/.jackdrc ]] && ! $NEWSETTINGS; then
 		launch_jack=$(cat "$HOME/.jackdrc")
-		echo "Found .jackdrc: $launch_jack"
+		echo "Found .jackdrc: $launch_jack" | systemd-cat -p info
 
 		# Filter command and change device only
 		launch_jack=$(echo $launch_jack | sed "s/-dhw:[0-9+]\?,\?[0-9+]/-dhw:$cardnum,$devnum/")
@@ -117,7 +117,7 @@ devnum="$(echo $device | grep -o -E 'device [0-9]+'| grep -o -E '[0-9]+')"
 }
 
 save_command_as_jackdrc(){
-	echo "Saving command $launch_jack to .jackdrc"
+	echo "Saving command $launch_jack to .jackdrc" | systemd-cat -p info
 	echo "$launch_jack" > $HOME/.jackdrc
 }
 
@@ -125,7 +125,7 @@ restart_and_bridge_pulse(){
 
 # Kill all pulse audio
 if [ -n $(pgrep pulseaudio) ]; then
-	echo "Pulse audio is running. Killing old pulse audio process... "
+	echo "Pulse audio is running. Killing old pulse audio process... " | systemd-cat -p warning
 
 	# killall pulseaudio &
 	pulseaudio --kill
@@ -134,29 +134,29 @@ if [ -n $(pgrep pulseaudio) ]; then
 	wait $PULSEKILL
 
 	while (kill -0 $PULSEKILL > /dev/null); do 
-		echo "Waiting for Pulse to be killed..."
+		echo "Waiting for Pulse to be killed..." | systemd-cat -p warning
 		sleep 1
 	done	
 
-	echo "Pulseaudio has been killed."
+	echo "Pulseaudio has been killed." | systemd-cat -p info
 fi
 
 counter=0
-while [ -z $(pgrep jackd) ] && [ $counter -lt 30 ];
+while [ -z $(jack_lsp) ] && [ $counter -lt 10 ];
 do
-	echo "Waiting for jack to come alive $counter ..."
+	echo "Waiting for jack to come alive $counter ..." | systemd-cat -p info
 	sleep 1
 	counter=$((counter+1))
 done 
 
-echo "Restarting pulseaudio and bridging to jack"
+echo "Restarting pulseaudio and bridging to jack" | systemd-cat -p info
 cadence-pulse2jack
 
 }
 
 init(){
-# Launch card chooser
-choose_card
+	# Launch card chooser
+	choose_card
 
 # If something was chosen, take action
 if [[ ! -z "$device" ]]; then
@@ -173,13 +173,17 @@ if [[ ! -z "$device" ]]; then
 	kill_old_processes
 
 	# Launch jack
-	echo "Launching jack using command $launch_jack"
+	echo "Launching jack using command $launch_jack" | systemd-cat -p info
+
 	$launch_jack
 
 	# Restart Pulse and bridge it to jack
 	if $RESTARTPULSE; then
 		restart_and_bridge_pulse
 	fi
+
+	# Bridge alsa midi
+	a2jmidid -e &
 
 	exit 0
 else

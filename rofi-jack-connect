@@ -40,13 +40,13 @@ get_connections(){
 	connect_from="$( echo "$connections" | $rofi_command -dmenu -p 'jack_from')"
 	
 	# Unique is without trailing numbers (for multiple connections)
-	unique_from="$(echo "$connect_from" | sed 's/_[0-9]//g')"
+	unique_from="$(echo "$connect_from" | sed -r 's/_?[0-9]//g')"
 
 	# If no connection chosen or jack not booted, return 1
 	if [ -z $connect_from ]; then return 1; fi
 
 	connect_to="$( echo "$connections" | $rofi_command -dmenu -p 'jack_to')"
-	unique_to="$(echo "$connect_to" | sed 's/_[0-9]//g')"
+	unique_to="$(echo "$connect_to" | sed -r 's/_?[0-9]//g')"
 }
 
 make_connection(){
