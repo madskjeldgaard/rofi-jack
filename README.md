@@ -4,6 +4,23 @@
 
 A collection of scripts for controlling and manipulating the [JACK audio connection kit](https://jackaudio.org/) using the [rofi](https://github.com/davatorium/rofi) application launcher.
 
+# Installation
+To install to default path (under /usr/local) run the following:
+```
+make install
+```
+
+As most Linux distributions use /usr as their prefix, to install under /usr
+run the following:
+```
+make PREFIX=/usr install
+```
+
+For packaging purposes the `DESTDIR` is also supported
+```
+make PREFIX=/usr DESTDIR=/tmp/rofi-jack install
+```
+
 # Scripts
 
 ### rofi-jack-device
